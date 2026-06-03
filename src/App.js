@@ -6,6 +6,7 @@ import Login from "./components/Login";
 import Borrow from "./components/Borrow";
 import Settings from "./components/Settings";
 import Register from "./components/Register";
+import Person from "./components/Person";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/reader" element={<Reader />} />
       <Route path="/borrow" element={<Borrow />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/person" element={<Person />} />
     </Routes>
   );
 }

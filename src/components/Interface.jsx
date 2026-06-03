@@ -35,7 +35,7 @@ import {
     FaUsers,
     FaExchangeAlt,
     FaCog,
-    FaUserShield, // Thêm icon bảo mật cho admin (tùy chọn)
+    FaUserShield,
     FaUser,
 } from "react-icons/fa";
 
@@ -109,6 +109,7 @@ function Interface() {
                                 sx={{
                                     borderRadius: 2,
                                     mb: 1,
+                                    py: 1.1,
                                     "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
                                 }}
                             >
@@ -130,6 +131,7 @@ function Interface() {
                                 sx={{
                                     borderRadius: 2,
                                     mb: 1,
+                                    py: 1.1,
                                     "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
                                 }}
                             >
@@ -152,6 +154,7 @@ function Interface() {
                                     sx={{
                                         borderRadius: 2,
                                         mb: 1,
+                                        py: 1.1,
                                         "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
                                     }}
                                 >
@@ -173,6 +176,8 @@ function Interface() {
                                 to="/borrow"
                                 sx={{
                                     borderRadius: 2,
+                                    mb: 1,
+                                    py: 1.1,
                                     "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
                                 }}
                             >
@@ -181,6 +186,28 @@ function Interface() {
                                 </ListItemIcon>
                                 <ListItemText
                                     primary="Mượn / Trả sách"
+                                    primaryTypographyProps={{ fontWeight: "bold" }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
+
+                        {/* PERSON */}
+                        <ListItem disablePadding>
+                            <ListItemButton
+                                component={Link}
+                                to="/person"
+                                sx={{
+                                    borderRadius: 2,
+                                    mb: 1,
+                                    py: 1.1,
+                                    "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
+                                    <FaUser />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Quản lý nhân sự"
                                     primaryTypographyProps={{ fontWeight: "bold" }}
                                 />
                             </ListItemButton>
@@ -198,6 +225,7 @@ function Interface() {
                                 to="/settings"
                                 sx={{
                                     borderRadius: 2,
+                                    py: 1.1,
                                     "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
                                 }}
                             >

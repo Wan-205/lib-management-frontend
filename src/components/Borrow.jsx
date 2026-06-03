@@ -36,6 +36,7 @@ import {
   FaPlus,
   FaCheck,
   FaTrash,
+  FaUser,
 } from "react-icons/fa";
 import { MdMenuBook } from "react-icons/md";
 
@@ -167,7 +168,7 @@ function Borrow() {
               <ListItemButton
                 component={Link}
                 to="/home"
-                sx={{ borderRadius: 2, mb: 1 }}
+                sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
               >
                 <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
                   <FaBook />
@@ -183,7 +184,7 @@ function Borrow() {
               <ListItemButton
                 component={Link}
                 to="/book"
-                sx={{ borderRadius: 2, mb: 1 }}
+                sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
               >
                 <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
                   <FaBook />
@@ -219,12 +220,24 @@ function Borrow() {
             )}
 
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/borrow">
+              <ListItemButton component={Link} to="/borrow" sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
                 <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
                   <FaExchangeAlt />
                 </ListItemIcon>
                 <ListItemText
                   primary="Mượn / Trả sách"
+                  primaryTypographyProps={{ fontWeight: "bold" }}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/person" sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
+                <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
+                  <FaUser />
+                </ListItemIcon>
+                <ListItemText
+                  primary="Quản lý nhân sự"
                   primaryTypographyProps={{ fontWeight: "bold" }}
                 />
               </ListItemButton>
@@ -237,7 +250,7 @@ function Borrow() {
           <Divider sx={{ bgcolor: "rgba(255,255,255,0.2)", mb: 2 }} />
           <List>
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/settings">
+              <ListItemButton component={Link} to="/settings" sx={{ borderRadius: 2, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
                 <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
                   <FaCog />
                 </ListItemIcon>

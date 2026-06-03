@@ -29,6 +29,7 @@ import {
   FaUsers,
   FaExchangeAlt,
   FaCog,
+  FaUser,
   FaSearch,
   FaPlus,
   FaEdit,
@@ -309,6 +310,7 @@ function Reader() {
               <ListItemButton
                 component={Link}
                 to="/borrow"
+                sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
               >
                 <ListItemIcon
                   sx={{
@@ -321,6 +323,30 @@ function Reader() {
 
                 <ListItemText
                   primary="Mượn / Trả sách"
+                  primaryTypographyProps={{
+                    fontWeight: "bold",
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/person"
+                sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
+              >
+                <ListItemIcon
+                  sx={{
+                    color: "white",
+                    minWidth: 40,
+                  }}
+                >
+                  <FaUser />
+                </ListItemIcon>
+
+                <ListItemText
+                  primary="Quản lý nhân sự"
                   primaryTypographyProps={{
                     fontWeight: "bold",
                   }}
@@ -342,7 +368,7 @@ function Reader() {
 
           <List>
             <ListItem disablePadding>
-              <ListItemButton component={Link} to="/settings">
+              <ListItemButton component={Link} to="/settings" sx={{ borderRadius: 2, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
                 <ListItemIcon
                   sx={{
                     color: "white",
