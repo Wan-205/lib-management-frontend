@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Box,
@@ -36,6 +36,15 @@ function Setting() {
   // Trạng thái lưu trữ cài đặt thư viện
   const rawRole = localStorage.getItem("role") || ""; 
   const role = rawRole.trim().toLowerCase();
+
+  // Get logged-in user info from localStorage
+  const loginData = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem("libzone_login"));
+    } catch (e) {
+      return null;
+    }
+  }, []);
 
   const [settings, setSettings] = useState(() => {
     const saved = localStorage.getItem("libzone_settings");
@@ -173,17 +182,19 @@ function Setting() {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/person" sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
-                <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
-                  <FaUser />
-                </ListItemIcon>
-                <ListItemText
-                  primary="Quản lý nhân sự"
-                  primaryTypographyProps={{ fontWeight: "bold" }}
-                />
-              </ListItemButton>
-            </ListItem>
+            {role === "admin" && (
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/person" sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
+                  <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
+                    <FaUser />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Quản lý nhân sự"
+                    primaryTypographyProps={{ fontWeight: "bold" }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
           </List>
         </Box>
 
@@ -217,6 +228,58 @@ function Setting() {
             Quản lý thông tin và cấu hình thư viện
           </Typography>
         </Box>
+
+        {/* USER LOGIN INFO CARD */}
+        {loginData && (
+          <Card
+            sx={{
+              borderRadius: "24px",
+              boxShadow: "0 9px 12px rgba(0, 0, 0, 0.08)",
+              border: "1px solid #e0e0e0",
+              mb: 4,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            }}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 3 }}>
+                <Box sx={{ color: "white" }}>
+                  <Typography sx={{ fontSize: 14, opacity: 0.9, mb: 1 }}>
+                    Người đăng nhập
+                  </Typography>
+                  <Typography sx={{ fontSize: 28, fontWeight: "bold", mb: 2 }}>
+                    {loginData.name || "Không xác định"}
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 3, fontSize: 15 }}>
+                    <Box>
+                      <Typography sx={{ opacity: 0.8, mb: 0.5 }}>Email</Typography>
+                      <Typography sx={{ fontWeight: 500 }}>{loginData.email || "N/A"}</Typography>
+                    </Box>
+                    <Box>
+                      <Typography sx={{ opacity: 0.8, mb: 0.5 }}>Vai trò</Typography>
+                      <Typography sx={{ fontWeight: 500, textTransform: "uppercase" }}>
+                        {loginData.role === "admin" ? "Quản trị viên" : "Nhân viên"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    width: 100,
+                    height: 100,
+                    borderRadius: "50%",
+                    bgcolor: "rgba(255,255,255,0.2)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "3px solid rgba(255,255,255,0.3)",
+                  }}
+                >
+                  <FaUser size={50} color="white" />
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        )}
 
         {/* CONTENT */}
         <Grid container spacing={4}>
