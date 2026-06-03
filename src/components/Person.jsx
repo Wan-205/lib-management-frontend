@@ -28,6 +28,10 @@ const Person = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formValues, setFormValues] = useState({ name: '', code: '', email: '', phone: '', address: '', status: 'Đang làm việc', role: '' });
 
+  // Read current user role from localStorage
+  const rawRole = localStorage.getItem('role') || '';
+  const role = rawRole.trim().toLowerCase();
+
   // Đọc dữ liệu nhân sự từ localStorage
   useEffect(() => {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -163,12 +167,14 @@ const Person = () => {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/reader" sx={{ borderRadius: 2, mb: 1, py: 1.1, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
-                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}><FaUsers /></ListItemIcon>
-                <ListItemText primary="Quản lý độc giả" primaryTypographyProps={{ fontWeight: 'bold' }} />
-              </ListItemButton>
-            </ListItem>
+            {role === "admin" && (
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/reader" sx={{ borderRadius: 2, mb: 1, py: 1.1, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
+                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}><FaUsers /></ListItemIcon>
+                  <ListItemText primary="Quản lý độc giả" primaryTypographyProps={{ fontWeight: 'bold' }} />
+                </ListItemButton>
+              </ListItem>
+            )}
 
             <ListItem disablePadding>
               <ListItemButton component={Link} to="/borrow" sx={{ borderRadius: 2, mb: 1, py: 1.1, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
@@ -177,12 +183,14 @@ const Person = () => {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding>
-              <ListItemButton component={Link} to="/person" sx={{ borderRadius: 2, mb: 1, py: 1.1, bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' } }}>
-                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}><FaUser /></ListItemIcon>
-                <ListItemText primary="Quản lý nhân sự" primaryTypographyProps={{ fontWeight: 'bold' }} />
-              </ListItemButton>
-            </ListItem>
+            {role === "admin" && (
+              <ListItem disablePadding>
+                <ListItemButton component={Link} to="/person" sx={{ borderRadius: 2, mb: 1, py: 1.1, bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' } }}>
+                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}><FaUser /></ListItemIcon>
+                  <ListItemText primary="Quản lý nhân sự" primaryTypographyProps={{ fontWeight: 'bold' }} />
+                </ListItemButton>
+              </ListItem>
+            )}
           </List>
         </Box>
 
