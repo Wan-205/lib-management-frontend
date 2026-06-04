@@ -42,32 +42,14 @@ import {
 
 import { MdMenuBook } from "react-icons/md";
 
+import { api } from "../utils/api";
+
 function Book() {
   const rawRole = localStorage.getItem("role") || ""; 
   const role = rawRole.trim().toLowerCase();
 
-  const [books, setBooks] = useState(() => {
-    const saved = localStorage.getItem("books");
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: 1,
-            name: "Đắc Nhân Tâm",
-            author: "Dale Carnegie",
-            category: "Kỹ năng sống",
-            quantity: 5,
-          },
-          {
-            id: 2,
-            name: "Nhà Giả Kim",
-            author: "Paulo Coelho",
-            category: "Văn học",
-            quantity: 0,
-          },
-        ];
-  });
-
+  const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("Tất cả");
   const [statusFilter, setStatusFilter] = useState("Tất cả");
@@ -75,8 +57,7 @@ function Book() {
   const [editId, setEditId] = useState(null);
   const [deleteId, setDeleteId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  
-  // Trạng thái kiểm tra lỗi khi bấm Save
+  const [totalPages, setTotalPages] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const booksPerPage = 5;
@@ -84,56 +65,91 @@ function Book() {
   const [form, setForm] = useState({
     name: "",
     author: "",
-    category: "Kỹ năng sống",
+    categoryId: "",
     quantity: 0,
+    isbn: "",
   });
 
+  // Load categories
   useEffect(() => {
-    localStorage.setItem("books", JSON.stringify(books));
-  }, [books]);
+    const loadCategories = async () => {
+      try {
+        const list = await api.categories.getAll();
+        setCategories(list);
+        if (list.length > 0) {
+          setForm((prev) => ({ ...prev, categoryId: list[0].id }));
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải thể loại:", err);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  // Load books
+  const loadBooks = async () => {
+    try {
+      const catId = categoryFilter === "Tất cả" ? "" : categoryFilter;
+      const data = await api.books.search(search, catId, currentPage - 1, booksPerPage);
+      setBooks(data.content || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách sách:", err);
+    }
+  };
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [search, categoryFilter, statusFilter]);
+    loadBooks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, categoryFilter, currentPage]);
 
-  const saveBook = () => {
+  const saveBook = async () => {
     setIsSubmitted(true);
     
-    // Ngăn chặn lưu nếu thông tin trống
-    if (!form.name.trim() || !form.author.trim()) {
+    if (!form.name.trim() || !form.author.trim() || !form.categoryId) {
       return;
     }
 
-    const newBook = {
-      ...form,
-      name: form.name.trim(),
+    const bookDTO = {
+      title: form.name.trim(),
       author: form.author.trim(),
-      quantity: Math.max(0, Number(form.quantity)),
+      categoryId: Number(form.categoryId),
+      totalQuantity: Math.max(0, Number(form.quantity)),
+      isbn: form.isbn.trim(),
     };
 
-    if (editId !== null) {
-      setBooks(books.map((b) => (b.id === editId ? { ...b, ...newBook } : b)));
-    } else {
-      setBooks([
-        ...books,
-        {
-          id: Date.now(),
-          ...newBook,
-        },
-      ]);
+    try {
+      if (editId !== null) {
+        await api.books.update(editId, bookDTO);
+      } else {
+        await api.books.create(bookDTO);
+      }
+      loadBooks();
+      closeModal();
+    } catch (err) {
+      alert(err.message || "Có lỗi xảy ra khi lưu sách");
     }
-
-    closeModal();
   };
 
-  const deleteBook = () => {
-    setBooks(books.filter((b) => b.id !== deleteId));
-    setDeleteId(null);
+  const deleteBook = async () => {
+    try {
+      await api.books.delete(deleteId);
+      loadBooks();
+      setDeleteId(null);
+    } catch (err) {
+      alert(err.message || "Không thể xóa sách");
+    }
   };
 
   const editBook = (book) => {
     setEditId(book.id);
-    setForm(book);
+    setForm({
+      name: book.title,
+      author: book.author,
+      categoryId: book.categoryId || "",
+      quantity: book.totalQuantity,
+      isbn: book.isbn || "",
+    });
     setShowModal(true);
   };
 
@@ -144,26 +160,20 @@ function Book() {
     setForm({
       name: "",
       author: "",
-      category: "Kỹ năng sống",
+      categoryId: categories.length > 0 ? categories[0].id : "",
       quantity: 0,
+      isbn: "",
     });
   };
 
-  // Lọc danh sách sách kết hợp tính toán trạng thái động
+  // Perform filtering on the current paginated books list
   const filteredBooks = books.filter((b) => {
-    const matchSearch = b.name.toLowerCase().includes(search.toLowerCase());
-    const matchCategory = categoryFilter === "Tất cả" || b.category === categoryFilter;
-    
-    // Tính toán trạng thái thực tế dựa trên số lượng
-    const actualStatus = b.quantity > 0 ? "Còn" : "Hết";
+    const actualStatus = b.currentQuantity > 0 ? "Còn" : "Hết";
     const matchStatus = statusFilter === "Tất cả" || actualStatus === statusFilter;
-
-    return matchSearch && matchCategory && matchStatus;
+    return matchStatus;
   });
 
-  const totalPages = Math.max(1, Math.ceil(filteredBooks.length / booksPerPage));
-  const startIndex = (currentPage - 1) * booksPerPage;
-  const currentBooks = filteredBooks.slice(startIndex, startIndex + booksPerPage);
+  const currentBooks = filteredBooks;
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f5f5" }}>
@@ -297,10 +307,9 @@ function Book() {
             sx={{ minWidth: 180, bgcolor: "white" }}
           >
             <MenuItem value="Tất cả">Tất cả thể loại</MenuItem>
-            <MenuItem value="Kỹ năng sống">Kỹ năng sống</MenuItem>
-            <MenuItem value="Văn học">Văn học</MenuItem>
-            <MenuItem value="Khoa học">Khoa học</MenuItem>
-            <MenuItem value="Kinh tế">Kinh tế</MenuItem>
+            {categories.map((c) => (
+              <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+            ))}
           </TextField>
 
           <TextField
@@ -344,7 +353,7 @@ function Book() {
                 <TableCell align="center" sx={{ color: "white", fontWeight: "bold" }}>Tác giả</TableCell>
                 <TableCell align="center" sx={{ color: "white", fontWeight: "bold" }}>Thể loại</TableCell>
                 <TableCell align="center" sx={{ color: "white", fontWeight: "bold" }}>Trạng thái</TableCell>
-                <TableCell align="center" sx={{ color: "white", fontWeight: "bold" }}>Số lượng</TableCell>
+                <TableCell align="center" sx={{ color: "white", fontWeight: "bold" }}>Số lượng (Sẵn có / Tổng)</TableCell>
                 <TableCell align="center" sx={{ color: "white", fontWeight: "bold" }}>Thao tác</TableCell>
               </TableRow>
             </TableHead>
@@ -358,14 +367,13 @@ function Book() {
                 currentBooks.map((b) => (
                   <TableRow key={b.id}>
                     <TableCell align="center">{b.id}</TableCell>
-                    <TableCell align="center">{b.name}</TableCell>
+                    <TableCell align="center">{b.title}</TableCell>
                     <TableCell align="center">{b.author}</TableCell>
-                    <TableCell align="center">{b.category}</TableCell>
+                    <TableCell align="center">{b.categoryName}</TableCell>
                     <TableCell align="center">
-                      {/* Trạng thái hiển thị linh hoạt theo số lượng thực tế */}
-                      {b.quantity > 0 ? "Còn" : "Hết"}
+                      {b.currentQuantity > 0 ? "Còn" : "Hết"}
                     </TableCell>
-                    <TableCell align="center">{b.quantity}</TableCell>
+                    <TableCell align="center">{b.currentQuantity} / {b.totalQuantity}</TableCell>
                     <TableCell align="center">
                       <Button size="small" variant="outlined" onClick={() => editBook(b)}>
                         <FaEdit />
@@ -425,17 +433,24 @@ function Book() {
             />
 
             <TextField
+              fullWidth
+              label="Mã ISBN"
+              margin="normal"
+              value={form.isbn}
+              onChange={(e) => setForm({ ...form, isbn: e.target.value })}
+            />
+
+            <TextField
               select
               fullWidth
               label="Thể loại"
               margin="normal"
-              value={form.category}
-              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              value={form.categoryId}
+              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
             >
-              <MenuItem value="Kỹ năng sống">Kỹ năng sống</MenuItem>
-              <MenuItem value="Văn học">Văn học</MenuItem>
-              <MenuItem value="Khoa học">Khoa học</MenuItem>
-              <MenuItem value="Kinh tế">Kinh tế</MenuItem>
+              {categories.map((c) => (
+                <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+              ))}
             </TextField>
 
             <TextField

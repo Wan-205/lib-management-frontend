@@ -23,7 +23,6 @@ import {
   DialogActions,
   TextField,
   MenuItem,
-  Select,
   Pagination,
   Divider,
   Chip,
@@ -40,101 +39,117 @@ import {
 } from "react-icons/fa";
 import { MdMenuBook } from "react-icons/md";
 
+import { api } from "../utils/api";
+
 function Borrow() {
  const rawRole = localStorage.getItem("role") || ""; 
   const role = rawRole.trim().toLowerCase();
 
-  const [borrows, setBorrows] = useState(() => {
-    const saved = localStorage.getItem("borrows");
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: "PM001",
-            reader: "Nguyễn Văn A",
-            book: "Đắc Nhân Tâm",
-            borrowDate: "2026-05-10",
-            returnDate: "2026-05-20",
-            status: "Đang mượn",
-          },
-        ];
-  });
-
+  const [borrows, setBorrows] = useState([]);
+  const [readers, setReaders] = useState([]);
+  const [books, setBooks] = useState([]);
   const [open, setOpen] = useState(false);
 
   const [form, setForm] = useState({
-    reader: "",
-    book: "",
+    readerId: "",
+    bookId: "",
     borrowDate: "",
-    returnDate: "",
-    status: "Đang mượn",
+    dueDate: "",
   });
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const perPage = 5;
 
+  const loadBorrows = async () => {
+    try {
+      const data = await api.borrows.search("", "", currentPage - 1, perPage);
+      setBorrows(data.content || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      console.error("Lỗi khi tải phiếu mượn:", err);
+    }
+  };
+
   useEffect(() => {
-    localStorage.setItem("borrows", JSON.stringify(borrows));
-  }, [borrows]);
+    loadBorrows();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  const loadSelectData = async () => {
+    try {
+      const readersRes = await api.readers.search("", 0, 1000);
+      const booksRes = await api.books.search("", "", 0, 1000);
+      setReaders(readersRes.content || []);
+      
+      // Filter out of stock books
+      setBooks(booksRes.content || []);
+
+      setForm({
+        readerId: readersRes.content?.[0]?.id || "",
+        bookId: booksRes.content?.[0]?.id || "",
+        borrowDate: new Date().toISOString().split('T')[0],
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // Mặc định 14 ngày
+      });
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách độc giả / sách:", err);
+    }
+  };
 
   const openModal = () => {
+    loadSelectData();
     setOpen(true);
   };
 
   const closeModal = () => {
     setOpen(false);
     setForm({
-      reader: "",
-      book: "",
+      readerId: "",
+      bookId: "",
       borrowDate: "",
-      returnDate: "",
-      status: "Đang mượn",
+      dueDate: "",
     });
   };
 
-  const saveBorrow = () => {
-    if (!form.reader || !form.book || !form.borrowDate || !form.returnDate) {
+  const saveBorrow = async () => {
+    if (!form.readerId || !form.bookId || !form.borrowDate || !form.dueDate) {
       alert("Nhập đầy đủ thông tin!");
       return;
     }
 
-    const newId =
-      "PM" +
-      (borrows.length + 1).toString().padStart(3, "0");
-
-    setBorrows([
-      ...borrows,
-      {
-        id: newId,
-        ...form,
-      },
-    ]);
-
-    closeModal();
-  };
-
-  const returnBook = (id) => {
-    setBorrows(
-      borrows.map((b) =>
-        b.id === id
-          ? {
-              ...b,
-              status: "Đã trả",
-            }
-          : b
-      )
-    );
-  };
-
-  const deleteBorrow = (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa phiếu mượn?")) {
-      setBorrows(borrows.filter((b) => b.id !== id));
+    try {
+      await api.borrows.create({
+        readerId: Number(form.readerId),
+        bookId: Number(form.bookId),
+        borrowDate: new Date(form.borrowDate),
+        dueDate: new Date(form.dueDate),
+      });
+      loadBorrows();
+      closeModal();
+    } catch (err) {
+      alert(err.message || "Lỗi khi mượn sách. Hãy chắc chắn sách vẫn còn trong kho.");
     }
   };
 
-  const totalPages = Math.ceil(borrows.length / perPage);
-  const startIndex = (currentPage - 1) * perPage;
-  const currentBorrows = borrows.slice(startIndex, startIndex + perPage);
+  const returnBook = async (id) => {
+    try {
+      await api.borrows.returnBook(id);
+      loadBorrows();
+    } catch (err) {
+      alert(err.message || "Lỗi khi trả sách");
+    }
+  };
+
+  const deleteBorrow = async (id) => {
+    if (window.confirm("Bạn có chắc muốn xóa phiếu mượn?")) {
+      try {
+        await api.borrows.delete(id);
+        loadBorrows();
+      } catch (err) {
+        alert(err.message || "Lỗi khi xóa phiếu mượn");
+      }
+    }
+  };
 
   return (
     <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f5f5" }}>
@@ -297,13 +312,13 @@ function Borrow() {
             </TableHead>
 
             <TableBody>
-              {currentBorrows.map((b) => (
+              {borrows.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell align="center">{b.id}</TableCell>
-                  <TableCell align="center">{b.reader}</TableCell>
-                  <TableCell align="center">{b.book}</TableCell>
-                  <TableCell align="center">{b.borrowDate}</TableCell>
-                  <TableCell align="center">{b.returnDate}</TableCell>
+                  <TableCell align="center">{b.readerName}</TableCell>
+                  <TableCell align="center">{b.bookTitle}</TableCell>
+                  <TableCell align="center">{b.borrowDate ? new Date(b.borrowDate).toLocaleDateString("vi-VN") : "N/A"}</TableCell>
+                  <TableCell align="center">{b.dueDate ? new Date(b.dueDate).toLocaleDateString("vi-VN") : "N/A"}</TableCell>
                   <TableCell align="center">
                     <Chip
                       label={b.status}
@@ -341,19 +356,33 @@ function Borrow() {
           <DialogTitle>Tạo phiếu mượn</DialogTitle>
           <DialogContent>
             <TextField
+              select
               fullWidth
-              label="Tên độc giả"
+              label="Độc giả"
               margin="normal"
-              value={form.reader}
-              onChange={(e) => setForm({ ...form, reader: e.target.value })}
-            />
+              value={form.readerId}
+              onChange={(e) => setForm({ ...form, readerId: e.target.value })}
+            >
+              {readers.map((r) => (
+                <MenuItem key={r.id} value={r.id}>
+                  {r.fullName} (Mã: {r.code})
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
+              select
               fullWidth
-              label="Tên sách"
+              label="Sách"
               margin="normal"
-              value={form.book}
-              onChange={(e) => setForm({ ...form, book: e.target.value })}
-            />
+              value={form.bookId}
+              onChange={(e) => setForm({ ...form, bookId: e.target.value })}
+            >
+              {books.map((b) => (
+                <MenuItem key={b.id} value={b.id} disabled={b.currentQuantity <= 0}>
+                  {b.title} (Sẵn có: {b.currentQuantity} / {b.totalQuantity})
+                </MenuItem>
+              ))}
+            </TextField>
             <TextField
               fullWidth
               type="date"
@@ -369,18 +398,9 @@ function Borrow() {
               margin="normal"
               label="Hạn trả"
               InputLabelProps={{ shrink: true }}
-              value={form.returnDate}
-              onChange={(e) => setForm({ ...form, returnDate: e.target.value })}
+              value={form.dueDate}
+              onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
             />
-            <Select
-              fullWidth
-              value={form.status}
-              sx={{ mt: 2 }}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
-              <MenuItem value="Đang mượn">Đang mượn</MenuItem>
-              <MenuItem value="Đã trả">Đã trả</MenuItem>
-            </Select>
           </DialogContent>
           <DialogActions>
             <Button onClick={closeModal}>Hủy</Button>

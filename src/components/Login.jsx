@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { api } from "../utils/api";
 
 import {
   Box,
@@ -44,30 +45,7 @@ function Login() {
     );
 
     if (data?.isLogin) {
-      navigate("/");
-    }
-
-    // AUTO CREATE ADMIN
-    const users = JSON.parse(
-      localStorage.getItem("libzone_users")
-    );
-
-    if (!users || users.length === 0) {
-      const adminAccount = [
-        {
-          id: 1,
-          name: "Admin",
-          email: "admin@gmail.com",
-          password: "123456",
-          role: "admin",
-        },
-      ];
-      localStorage.setItem("role", adminAccount[0].role);
-
-      localStorage.setItem(
-        "libzone_users",
-        JSON.stringify(adminAccount)
-      );
+      navigate("/home");
     }
 
     // REMEMBER EMAIL
@@ -84,7 +62,7 @@ function Login() {
   }, [navigate]);
 
   // LOGIN
-  const handleLogin = () => {
+  const handleLogin = async () => {
     setError("");
 
     // CHECK EMPTY
@@ -95,36 +73,21 @@ function Login() {
       return;
     }
 
-    // GET USERS
-    const users =
-      JSON.parse(
-        localStorage.getItem(
-          "libzone_users"
-        )
-      ) || [];
+    try {
+      const data = await api.auth.login(form.email.trim(), form.password);
 
-    // FIND USER
-    const user = users.find(
-      (item) =>
-        item.email.trim() ===
-          form.email.trim() &&
-        item.password ===
-          form.password
-    );
-
-    // LOGIN SUCCESS
-    if (user) {
       localStorage.setItem(
         "libzone_login",
         JSON.stringify({
           isLogin: true,
-          id: user.id,
-          name: user.name,
-          email: user.email,
-          role: user.role,
+          id: data.id,
+          name: data.username,
+          email: data.username,
+          role: data.role,
+          token: data.token,
         })
       );
-      localStorage.setItem("role", user.role);
+      localStorage.setItem("role", data.role);
 
       // REMEMBER EMAIL
       if (form.remember) {
@@ -139,10 +102,8 @@ function Login() {
       }
 
       navigate("/home");
-    } else {
-      setError(
-        "Sai tài khoản hoặc mật khẩu"
-      );
+    } catch (err) {
+      setError(err.message || "Sai tài khoản hoặc mật khẩu");
     }
   };
 

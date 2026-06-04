@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { api } from "../utils/api";
 
 import {
   Box,
@@ -41,80 +42,56 @@ import {
 import { MdMenuBook } from "react-icons/md";
 
 function Reader() {
-  const [members, setMembers] = useState([
-    {
-      id: "DG001",
-      name: "Nguyễn Văn A",
-      email: "nguyenvana@email.com",
-      phone: "0901234567",
-      borrow: 3,
-    },
-    {
-      id: "DG002",
-      name: "Trần Thị B",
-      email: "tranthib@email.com",
-      phone: "0902345678",
-      borrow: 1,
-    },
-    {
-      id: "DG003",
-      name: "Lê Văn C",
-      email: "levanc@email.com",
-      phone: "0903456789",
-      borrow: 0,
-    },
-    {
-      id: "DG004",
-      name: "Phạm Thị D",
-      email: "phamthid@email.com",
-      phone: "0904567890",
-      borrow: 2,
-    },
-  ]);
-
+  const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [form, setForm] = useState({
+    code: "",
     name: "",
     email: "",
     phone: "",
-    borrow: 0,
+    status: "ACTIVE",
   });
 
   const perPage = 6;
 
-  const filteredMembers = members.filter(
-    (m) =>
-      m.name.toLowerCase().includes(search.toLowerCase()) ||
-      m.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const loadReaders = async () => {
+    try {
+      const data = await api.readers.search(search, currentPage - 1, perPage);
+      setMembers(data.content || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách độc giả:", err);
+    }
+  };
 
-  const totalPages = Math.ceil(
-    filteredMembers.length / perPage
-  );
-
-  const startIndex = (currentPage - 1) * perPage;
-
-  const currentMembers = filteredMembers.slice(
-    startIndex,
-    startIndex + perPage
-  );
+  useEffect(() => {
+    loadReaders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, currentPage]);
 
   const openModal = (member = null) => {
     if (member) {
       setEditId(member.id);
-      setForm(member);
+      setForm({
+        code: member.code,
+        name: member.fullName,
+        email: member.email,
+        phone: member.phone,
+        status: member.status || "ACTIVE",
+      });
     } else {
       setEditId(null);
-
       setForm({
+        code: "DG" + Date.now().toString().slice(-5),
         name: "",
         email: "",
         phone: "",
-        borrow: 0,
+        status: "ACTIVE",
       });
     }
 
@@ -125,53 +102,45 @@ function Reader() {
     setOpen(false);
   };
 
-  const saveMember = () => {
-    if (!form.name) {
+  const saveMember = async () => {
+    if (!form.name.trim()) {
       alert("Nhập tên độc giả!");
       return;
     }
 
-    if (editId) {
-      setMembers(
-        members.map((m) =>
-          m.id === editId ? { ...m, ...form } : m
-        )
-      );
-    } else {
-      const maxId =
-        members.length > 0
-          ? Math.max(
-              ...members.map((m) =>
-                parseInt(m.id.replace("DG", ""))
-              )
-            )
-          : 0;
+    const readerDTO = {
+      code: form.code,
+      fullName: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      status: form.status,
+    };
 
-      setMembers([
-        ...members,
-        {
-          id:
-            "DG" +
-            (maxId + 1)
-              .toString()
-              .padStart(3, "0"),
-          ...form,
-        },
-      ]);
+    try {
+      if (editId) {
+        await api.readers.update(editId, readerDTO);
+      } else {
+        await api.readers.create(readerDTO);
+      }
+      loadReaders();
+      closeModal();
+    } catch (err) {
+      alert(err.message || "Lỗi khi lưu thông tin độc giả");
     }
-
-    closeModal();
   };
 
-  const deleteMember = (id) => {
+  const deleteMember = async (id) => {
     if (
       window.confirm(
         "Bạn có chắc muốn xóa độc giả này?"
       )
     ) {
-      setMembers(
-        members.filter((m) => m.id !== id)
-      );
+      try {
+        await api.readers.delete(id);
+        loadReaders();
+      } catch (err) {
+        alert(err.message || "Không thể xóa độc giả này");
+      }
     }
   };
 
@@ -451,7 +420,7 @@ function Reader() {
 
         {/* CARD LIST */}
         <Grid container spacing={3}>
-          {currentMembers.map((m) => (
+          {members.map((m) => (
             <Grid
               item
               xs={12}
@@ -487,7 +456,7 @@ function Reader() {
                         fontSize: 24,
                       }}
                     >
-                      {m.name.charAt(0)}
+                      {m.fullName ? m.fullName.charAt(0) : ""}
                     </Box>
 
                     <Box>
@@ -495,14 +464,14 @@ function Reader() {
                         fontWeight="bold"
                         fontSize={20}
                       >
-                        {m.name}
+                        {m.fullName}
                       </Typography>
 
                       <Typography
                         color="gray"
                         fontSize={13}
                       >
-                        {m.id}
+                        {m.code} (ID: {m.id})
                       </Typography>
                     </Box>
                   </Box>
@@ -556,7 +525,7 @@ function Reader() {
                         fontWeight="bold"
                         fontSize={28}
                       >
-                        {m.borrow}
+                        {m.currentlyBorrowingCount}
                       </Typography>
                     </Box>
 
@@ -618,6 +587,14 @@ function Reader() {
           <DialogContent>
             <TextField
               fullWidth
+              label="Mã độc giả"
+              margin="normal"
+              disabled
+              value={form.code}
+            />
+
+            <TextField
+              fullWidth
               label="Họ tên"
               margin="normal"
               value={form.name}
@@ -651,22 +628,6 @@ function Reader() {
                 setForm({
                   ...form,
                   phone: e.target.value,
-                })
-              }
-            />
-
-            <TextField
-              fullWidth
-              type="number"
-              label="Số sách đang mượn"
-              margin="normal"
-              value={form.borrow}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  borrow: Number(
-                    e.target.value
-                  ),
                 })
               }
             />

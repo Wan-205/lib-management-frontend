@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { api } from "../utils/api";
 
 import {
   Box,
@@ -43,13 +44,12 @@ function Register() {
   });
 
   // REGISTER
-  const handleRegister = () => {
+  const handleRegister = async () => {
     setError("");
     setSuccess("");
 
     // CHECK EMPTY
     if (
-      !form.name ||
       !form.email ||
       !form.password
     ) {
@@ -59,53 +59,26 @@ function Register() {
       return;
     }
 
-    // GET USERS
-    const users = JSON.parse(
-      localStorage.getItem("libzone_users")
-    ) || [];
+    try {
+      await api.auth.register(form.email.trim(), form.password, form.role);
+      
+      setSuccess("Đăng ký thành công");
 
-    // CHECK EMAIL
-    const checkEmail = users.find(
-      (item) => item.email === form.email
-    );
+      // RESET FORM
+      setForm({
+        name: "",
+        email: "",
+        password: "",
+        role: "staff",
+      });
 
-    if (checkEmail) {
-      setError("Email đã tồn tại");
-      return;
+      // REDIRECT LOGIN
+      setTimeout(() => {
+        navigate("/");
+      }, 1500);
+    } catch (err) {
+      setError(err.message || "Đăng ký thất bại. Email đã tồn tại hoặc có lỗi.");
     }
-
-    // NEW USER
-    const newUser = {
-      id: Date.now(),
-      name: form.name,
-      email: form.email,
-      password: form.password,
-      role: form.role,
-    };
-
-    // PUSH USER
-    users.push(newUser);
-
-    // SAVE USERS
-    localStorage.setItem(
-      "libzone_users",
-      JSON.stringify(users)
-    );
-
-    setSuccess("Đăng ký thành công");
-
-    // RESET FORM
-    setForm({
-      name: "",
-      email: "",
-      password: "",
-      role: "staff",
-    });
-
-    // REDIRECT LOGIN
-    setTimeout(() => {
-      navigate("/");
-    }, 1500);
   };
 
   return (
