@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, Outlet } from "react-router-dom";
+import { api } from "../utils/api";
 
 import {
     Box,
@@ -43,6 +44,13 @@ import { MdMenuBook } from "react-icons/md";
 
 function Interface() {
     const [anchorEl, setAnchorEl] = useState(null);
+    const [stats, setStats] = useState({
+        totalBooks: 0,
+        activeReaders: 0,
+        currentlyBorrowed: 0,
+        overdueBooks: 0
+    });
+    const [latestBorrows, setLatestBorrows] = useState([]);
 
     // Lấy và kiểm tra dữ liệu login an toàn
     const loginData = React.useMemo(() => {
@@ -55,16 +63,21 @@ function Interface() {
 
     const role = loginData?.role;
 
-    // SAMPLE DATA
-    const books = [
-        {
-            id: "PM0452",
-            reader: "Trần Thị B",
-            book: "Đắc Nhân Tâm",
-            date: "24/05/2024",
-            status: "Đang mượn",
-        },
-    ];
+    // Load dashboard statistics and latest borrow transactions
+    useEffect(() => {
+        const loadDashboardData = async () => {
+            try {
+                const statsRes = await api.dashboard.getStats();
+                setStats(statsRes);
+                
+                const borrowsRes = await api.borrows.search("", "", 0, 5);
+                setLatestBorrows(borrowsRes.content || []);
+            } catch (err) {
+                console.error("Lỗi khi tải dữ liệu dashboard:", err);
+            }
+        };
+        loadDashboardData();
+    }, []);
 
     // NOTIFY HANDLERS
     const handleNotifyClick = (event) => {
@@ -371,10 +384,10 @@ function Interface() {
                 {/* CARDS METRICS */}
                 <Grid container spacing={3} mb={4}>
                     {[
-                        ["Tổng số sách", "12,500"],
-                        ["Độc giả tích cực", "3,120"],
-                        ["Đang mượn", "452"],
-                        ["Sách quá hạn", "19"],
+                        ["Tổng số sách", (stats?.totalBooks ?? 0).toLocaleString("vi-VN")],
+                        ["Độc giả tích cực", (stats?.activeReaders ?? 0).toLocaleString("vi-VN")],
+                        ["Đang mượn", (stats?.currentlyBorrowed ?? 0).toLocaleString("vi-VN")],
+                        ["Sách quá hạn", (stats?.overdueBooks ?? 19).toLocaleString("vi-VN")],
                     ].map((item, index) => (
                         <Grid item xs={12} sm={6} md={3} key={index}>
                             <Card sx={{ borderRadius: 4, boxShadow: 3 }}>
@@ -410,13 +423,19 @@ function Interface() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {books.map((item) => (
+                                    {latestBorrows.map((item) => (
                                         <TableRow key={item.id}>
                                             <TableCell>{item.id}</TableCell>
-                                            <TableCell>{item.reader}</TableCell>
-                                            <TableCell>{item.book}</TableCell>
-                                            <TableCell>{item.date}</TableCell>
-                                            <TableCell>{item.status}</TableCell>
+                                            <TableCell>{item.readerName}</TableCell>
+                                            <TableCell>{item.bookTitle}</TableCell>
+                                            <TableCell>{item.borrowDate ? new Date(item.borrowDate).toLocaleDateString("vi-VN") : "N/A"}</TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={item.status}
+                                                    color={item.status === "Đã trả" ? "success" : "warning"}
+                                                    size="small"
+                                                />
+                                            </TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
