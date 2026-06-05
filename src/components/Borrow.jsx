@@ -320,11 +320,17 @@ function Borrow() {
                   <TableCell align="center">
                     <Chip
                       label={b.status}
-                      color={b.status === "Đã trả" ? "success" : "warning"}
+                      color={
+                        b.status === "Đã trả"
+                          ? "success"
+                          : b.status === "Quá hạn"
+                          ? "error"
+                          : "warning"
+                      }
                     />
                   </TableCell>
                   <TableCell align="center">
-                    {b.status === "Đang mượn" && (
+                    {(b.status === "Đang mượn" || b.status === "Quá hạn") && (
                       <Button color="success" onClick={() => returnBook(b.id)}>
                         <FaCheck />
                       </Button>

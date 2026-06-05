@@ -375,7 +375,7 @@ function Interface() {
                         ["Tổng số sách", (stats?.totalBooks ?? 0).toLocaleString("vi-VN")],
                         ["Độc giả tích cực", (stats?.activeReaders ?? 0).toLocaleString("vi-VN")],
                         ["Đang mượn", (stats?.currentlyBorrowed ?? 0).toLocaleString("vi-VN")],
-                        ["Sách quá hạn", (stats?.overdueBooks ?? 19).toLocaleString("vi-VN")],
+                        ["Sách quá hạn", (stats?.overdueBooks ?? 0).toLocaleString("vi-VN")],
                     ].map((item, index) => (
                         <Grid item xs={12} sm={6} md={3} key={index}>
                             <Card sx={{ borderRadius: 4, boxShadow: 3 }}>
@@ -420,7 +420,13 @@ function Interface() {
                                             <TableCell>
                                                 <Chip
                                                     label={item.status}
-                                                    color={item.status === "Đã trả" ? "success" : "warning"}
+                                                    color={
+                                                        item.status === "Đã trả"
+                                                            ? "success"
+                                                            : item.status === "Quá hạn"
+                                                            ? "error"
+                                                            : "warning"
+                                                    }
                                                     size="small"
                                                 />
                                             </TableCell>
