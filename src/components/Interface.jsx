@@ -11,7 +11,6 @@ import {
     ListItemButton,
     ListItemIcon,
     ListItemText,
-    TextField,
     Card,
     CardContent,
     Grid,
@@ -158,29 +157,27 @@ function Interface() {
                             </ListItemButton>
                         </ListItem>
 
-                        {/* READER - ADMIN ONLY */}
-                        {role === "admin" && (
-                            <ListItem disablePadding>
-                                <ListItemButton
-                                    component={Link}
-                                    to="/reader"
-                                    sx={{
-                                        borderRadius: 2,
-                                        mb: 1,
-                                        py: 1.1,
-                                        "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-                                    }}
-                                >
-                                    <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
-                                        <FaUsers />
-                                    </ListItemIcon>
-                                    <ListItemText
-                                        primary="Quản lý độc giả"
-                                        primaryTypographyProps={{ fontWeight: "bold" }}
-                                    />
-                                </ListItemButton>
-                            </ListItem>
-                        )}
+                        {/* READER */}
+                        <ListItem disablePadding>
+                            <ListItemButton
+                                component={Link}
+                                to="/reader"
+                                sx={{
+                                    borderRadius: 2,
+                                    mb: 1,
+                                    py: 1.1,
+                                    "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+                                }}
+                            >
+                                <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
+                                    <FaUsers />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary="Quản lý độc giả"
+                                    primaryTypographyProps={{ fontWeight: "bold" }}
+                                />
+                            </ListItemButton>
+                        </ListItem>
 
                         {/* BORROW */}
                         <ListItem disablePadding>
@@ -274,12 +271,7 @@ function Interface() {
                         Bảng điều khiển
                     </Typography>
 
-                    <TextField
-                        placeholder="Tìm nhanh ..."
-                        variant="outlined"
-                        size="small"
-                        sx={{ width: 300, bgcolor: "white", borderRadius: 2 }}
-                    />
+
 
                     {/* KHU VỰC THÔNG BÁO & ROLE */}
                     <Box sx={{ display: "flex", alignItems: "center", gap: 2, md: { gap: 3 } }}>
@@ -357,27 +349,23 @@ function Interface() {
                             Thêm sách mới
                         </Button>
 
-                        {/* Độc giả chỉ dành cho Admin */}
-                        {role === "admin" && (
-                            <>
-                                <Button
-                                    component={Link}
-                                    to="/reader"
-                                    variant="contained"
-                                    color="primary"
-                                >
-                                    Thêm độc giả
-                                </Button>
-                                <Button
-                                    component={Link}
-                                    to="/reader"
-                                    variant="contained"
-                                    color="secondary"
-                                >
-                                    Tra cứu độc giả
-                                </Button>
-                            </>
-                        )}
+                        {/* Độc giả */}
+                        <Button
+                            component={Link}
+                            to="/reader"
+                            variant="contained"
+                            color="primary"
+                        >
+                            Thêm độc giả
+                        </Button>
+                        <Button
+                            component={Link}
+                            to="/reader"
+                            variant="contained"
+                            color="secondary"
+                        >
+                            Tra cứu độc giả
+                        </Button>
                     </Box>
                 </Box>
 

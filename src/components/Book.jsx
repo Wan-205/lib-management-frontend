@@ -221,25 +221,23 @@ function Book() {
               </ListItemButton>
             </ListItem>
 
-            {role === "admin" && (
-              <ListItem disablePadding>
-                <ListItemButton
-                  component={Link}
-                  to="/reader"
-                  sx={{
-                    borderRadius: 2,
-                    mb: 1,
-                    py: 1.1,
-                    "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-                  }}
-                >
-                  <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
-                    <FaUsers />
-                  </ListItemIcon>
-                  <ListItemText primary="Quản lý độc giả" primaryTypographyProps={{ fontWeight: "bold" }} />
-                </ListItemButton>
-              </ListItem>
-            )}
+            <ListItem disablePadding>
+              <ListItemButton
+                component={Link}
+                to="/reader"
+                sx={{
+                  borderRadius: 2,
+                  mb: 1,
+                  py: 1.1,
+                  "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
+                }}
+              >
+                <ListItemIcon sx={{ color: "white", minWidth: 40 }}>
+                  <FaUsers />
+                </ListItemIcon>
+                <ListItemText primary="Quản lý độc giả" primaryTypographyProps={{ fontWeight: "bold" }} />
+              </ListItemButton>
+            </ListItem>
 
             <ListItem disablePadding>
               <ListItemButton component={Link} to="/borrow" sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>

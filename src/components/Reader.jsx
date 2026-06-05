@@ -42,6 +42,9 @@ import {
 import { MdMenuBook } from "react-icons/md";
 
 function Reader() {
+  const rawRole = localStorage.getItem("role") || "";
+  const role = rawRole.trim().toLowerCase();
+
   const [members, setMembers] = useState([]);
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
@@ -299,29 +302,31 @@ function Reader() {
               </ListItemButton>
             </ListItem>
 
-            <ListItem disablePadding>
-              <ListItemButton
-                component={Link}
-                to="/person"
-                sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
-              >
-                <ListItemIcon
-                  sx={{
-                    color: "white",
-                    minWidth: 40,
-                  }}
+            {role === "admin" && (
+              <ListItem disablePadding>
+                <ListItemButton
+                  component={Link}
+                  to="/person"
+                  sx={{ borderRadius: 2, mb: 1, py: 1.1, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}
                 >
-                  <FaUser />
-                </ListItemIcon>
-
-                <ListItemText
-                  primary="Quản lý nhân sự"
-                  primaryTypographyProps={{
-                    fontWeight: "bold",
-                  }}
-                />
-              </ListItemButton>
-            </ListItem>
+                  <ListItemIcon
+                    sx={{
+                      color: "white",
+                      minWidth: 40,
+                    }}
+                  >
+                    <FaUser />
+                  </ListItemIcon>
+  
+                  <ListItemText
+                    primary="Quản lý nhân sự"
+                    primaryTypographyProps={{
+                      fontWeight: "bold",
+                    }}
+                  />
+                </ListItemButton>
+              </ListItem>
+            )}
           </List>
         </Box>
 

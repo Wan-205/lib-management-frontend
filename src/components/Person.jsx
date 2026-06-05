@@ -9,14 +9,7 @@ import {
 import { FaBook, FaUsers, FaExchangeAlt, FaCog, FaUser } from 'react-icons/fa';
 import { MdMenuBook } from 'react-icons/md';
 
-const STORAGE_KEY = 'libzone_employees';
-
-// Dữ liệu mẫu khởi tạo ban đầu để hiển thị lên bảng
-const initialData = [
-  { id: 1, name: 'Nguyễn Văn A', code: 'NV001', email: 'a@libzone.vn', phone: '0901234567', address: '12 Lê Lợi, Q.1, TP.HCM', status: 'Đang làm việc', role: 'Quản lý' },
-  { id: 2, name: 'Trần Thị B', code: 'NV002', email: 'b@libzone.vn', phone: '0902345678', address: '45 Nguyễn Huệ, Q.1, TP.HCM', status: 'Nghỉ phép', role: 'Nhân viên' },
-  { id: 3, name: 'Lê Văn C', code: 'NV003', email: 'c@libzone.vn', phone: '0903456789', address: '78 Trần Hưng Đạo, Q.5, TP.HCM', status: 'Đang làm việc', role: 'Nhân viên' },
-];
+import { api } from '../utils/api';
 
 const Person = () => {
   const [employees, setEmployees] = useState([]);
@@ -32,22 +25,31 @@ const Person = () => {
   const rawRole = localStorage.getItem('role') || '';
   const role = rawRole.trim().toLowerCase();
 
-  // Đọc dữ liệu nhân sự từ localStorage
-  useEffect(() => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      setEmployees(JSON.parse(data));
-    } else {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initialData));
-      setEmployees(initialData);
+  // Tải danh sách nhân viên từ Backend
+  const fetchEmployees = async () => {
+    try {
+      const data = await api.employees.search(search, 0, 1000);
+      const mapped = (data.content || []).map(emp => ({
+        id: emp.id,
+        name: emp.fullName,
+        code: emp.code,
+        email: emp.email,
+        phone: emp.phone,
+        address: emp.address,
+        status: emp.status,
+        role: emp.role,
+        createdAt: emp.createdAt
+      }));
+      setEmployees(mapped);
+    } catch (err) {
+      console.error("Lỗi khi tải danh sách nhân viên:", err);
     }
-  }, []);
+  };
 
   useEffect(() => {
-    if (employees.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(employees));
-    }
-  }, [employees]);
+    fetchEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
   // Tính toán nhanh số liệu thống kê cho các Card chỉ số
   const total = employees.length;
@@ -57,9 +59,9 @@ const Person = () => {
   const filteredEmployees = employees.filter((emp) => {
     const keyword = search.toLowerCase();
     const matchesSearch =
-      emp.name.toLowerCase().includes(keyword) ||
-      emp.code.toLowerCase().includes(keyword) ||
-      emp.email.toLowerCase().includes(keyword);
+      (emp.name || '').toLowerCase().includes(keyword) ||
+      (emp.code || '').toLowerCase().includes(keyword) ||
+      (emp.email || '').toLowerCase().includes(keyword);
 
     if (!matchesSearch) return false;
     if (tabValue === 1) return emp.status === 'Đang làm việc';
@@ -99,34 +101,83 @@ const Person = () => {
     setFormValues(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSaveForm = () => {
+  const handleSaveForm = async () => {
     if (!formValues.name) {
       alert('Nhập tên nhân viên');
       return;
     }
 
-    if (isEditing) {
-      const updated = employees.map(e => e.id === formValues.id ? { ...formValues } : e);
-      setEmployees(updated);
+    const employeeDTO = {
+      code: formValues.code,
+      fullName: formValues.name,
+      email: formValues.email,
+      phone: formValues.phone,
+      address: formValues.address,
+      status: formValues.status,
+      role: formValues.role
+    };
+
+    try {
+      if (isEditing) {
+        await api.employees.update(formValues.id, employeeDTO);
+      } else {
+        await api.employees.create(employeeDTO);
+      }
+      fetchEmployees();
       setOpenForm(false);
-    } else {
-      const newEmp = { ...formValues, id: Date.now() };
-      setEmployees(prev => [...prev, newEmp]);
-      setOpenForm(false);
+    } catch (err) {
+      alert(err.message || "Lỗi khi lưu thông tin nhân viên");
     }
   };
 
-  const handleDelete = (emp) => {
+  const handleDelete = async (emp) => {
     if (window.confirm('Bạn có chắc muốn xóa nhân viên này?')) {
-      setEmployees(prev => prev.filter(e => e.id !== emp.id));
+      try {
+        await api.employees.delete(emp.id);
+        fetchEmployees();
+      } catch (err) {
+        alert(err.message || "Lỗi khi xóa nhân viên");
+      }
     }
   };
 
-  const handleDisable = (emp) => {
+  const handleDisable = async (emp) => {
     if (!emp) return;
     if (!window.confirm('Bạn có chắc muốn vô hiệu hoá tài khoản của nhân viên này?')) return;
-    setEmployees(prev => prev.map(e => e.id === emp.id ? { ...e, status: 'Đã vô hiệu hoá' } : e));
+    
+    const employeeDTO = {
+      code: emp.code,
+      fullName: emp.name,
+      email: emp.email,
+      phone: emp.phone,
+      address: emp.address,
+      status: 'Đã vô hiệu hoá',
+      role: emp.role
+    };
+
+    try {
+      await api.employees.update(emp.id, employeeDTO);
+      fetchEmployees();
+    } catch (err) {
+      alert(err.message || "Lỗi khi vô hiệu hóa tài khoản");
+    }
   };
+
+  if (role !== "admin") {
+    return (
+      <Box sx={{ p: 4, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", bgcolor: "#f4f6f9" }}>
+        <Typography variant="h5" color="error" gutterBottom fontWeight="bold">
+          Truy cập bị từ chối
+        </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+          Bạn không có quyền truy cập trang Quản lý nhân sự.
+        </Typography>
+        <Button component={Link} to="/home" variant="contained" sx={{ bgcolor: "#171654", "&:hover": { bgcolor: "#0f1444" } }}>
+          Quay lại trang chủ
+        </Button>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: '#f4f6f9' }}>
@@ -167,14 +218,12 @@ const Person = () => {
               </ListItemButton>
             </ListItem>
 
-            {role === "admin" && (
-              <ListItem disablePadding>
-                <ListItemButton component={Link} to="/reader" sx={{ borderRadius: 2, mb: 1, py: 1.1, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
-                  <ListItemIcon sx={{ color: 'white', minWidth: 40 }}><FaUsers /></ListItemIcon>
-                  <ListItemText primary="Quản lý độc giả" primaryTypographyProps={{ fontWeight: 'bold' }} />
-                </ListItemButton>
-              </ListItem>
-            )}
+            <ListItem disablePadding>
+              <ListItemButton component={Link} to="/reader" sx={{ borderRadius: 2, mb: 1, py: 1.1, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>
+                <ListItemIcon sx={{ color: 'white', minWidth: 40 }}><FaUsers /></ListItemIcon>
+                <ListItemText primary="Quản lý độc giả" primaryTypographyProps={{ fontWeight: 'bold' }} />
+              </ListItemButton>
+            </ListItem>
 
             <ListItem disablePadding>
               <ListItemButton component={Link} to="/borrow" sx={{ borderRadius: 2, mb: 1, py: 1.1, '&:hover': { bgcolor: 'rgba(255,255,255,0.08)' } }}>

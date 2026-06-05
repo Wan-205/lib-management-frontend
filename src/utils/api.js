@@ -193,4 +193,36 @@ export const api = {
       return res.data; // List of RecentActivityDTO
     },
   },
+
+  // Employees (Nhân sự)
+  employees: {
+    search: async (keyword = "", page = 0, size = 10) => {
+      let query = `/api/v1/employee/search?page=${page}&size=${size}`;
+      if (keyword) {
+        query += `&keyword=${encodeURIComponent(keyword)}`;
+      }
+      const res = await apiRequest(query);
+      return res.data; // PageResponseDTO
+    },
+    create: async (employeeDTO) => {
+      const res = await apiRequest("/api/v1/employee", {
+        method: "POST",
+        body: JSON.stringify(employeeDTO),
+      });
+      return res.data;
+    },
+    update: async (id, employeeDTO) => {
+      const res = await apiRequest(`/api/v1/employee/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(employeeDTO),
+      });
+      return res.data;
+    },
+    delete: async (id) => {
+      const res = await apiRequest(`/api/v1/employee/${id}`, {
+        method: "DELETE",
+      });
+      return res.data;
+    },
+  },
 };
